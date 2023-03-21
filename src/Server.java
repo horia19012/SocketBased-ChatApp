@@ -11,13 +11,13 @@ public class Server implements Runnable {
 
 	private ArrayList<SocketHandler> connections;
 	private ServerSocket server;
-	private boolean active;
+	private boolean active = true;
 	private ExecutorService pool;
 
 	public Server() {
-		this.connections = new ArrayList<>();
-		active = true;
 
+		active = true;
+		this.connections = new ArrayList<>();
 	}
 
 	public void broadcast(String msg) {
@@ -39,24 +39,24 @@ public class Server implements Runnable {
 				pool.execute(handler);
 			}
 		} catch (Exception e) {
-			this.shutDown();
+			e.printStackTrace();
 		}
 	}
 
 	public void shutDown() {
 		try {
-
+			pool.shutdown();
 			active = false;
 
 			for (SocketHandler sh : connections) {
 				sh.shutDown();
 			}
 
-			if (server.isClosed() == false) {
+			if (!server.isClosed()) {
 				server.close();
 			}
 		} catch (Exception e) {
-			//ignoring
+			// ignoring
 		}
 	}
 
@@ -77,16 +77,17 @@ public class Server implements Runnable {
 			try {
 				in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				out = new PrintWriter(client.getOutputStream(), true);
+
 				out.println("Enter an username:");
 				username = in.readLine();
-				System.out.println(username + " connected!Feel free to talk...");
+				System.out.println(username + " connected!");
 				broadcast(username + " joined!");
 				String message;
 				while ((message = in.readLine()) != null) {
 					if (message.startsWith("/quit")) {
 
 						broadcast(username + " left the chat..");
-						this.shutDown();
+						shutDown();
 					} else {
 						broadcast(username + ": " + message);
 					}
@@ -99,8 +100,9 @@ public class Server implements Runnable {
 
 		public void shutDown() {
 			try {
-				out.close();
 				in.close();
+				out.close();
+
 				if (!client.isClosed()) {
 					client.close();
 				}
