@@ -1,0 +1,12 @@
+	This project is a basic implementation of a chat system that relies on a centralized server to facilitate communication between clients. With this system, multiple clients can connect to the server and engage in real-time conversations with one another.
+	While this implementation is relatively simple, it lays the groundwork for more complex chat systems that could incorporate additional features such as user authentication, message encryption, and multimedia support. By building on this basic prototype, developers can create custom chat applications that meet the specific needs of their users.
+
+How to use:
+	To launch the server, run the main class for the server. Next, open multiple command prompts and navigate to the project's source directory. Finally, run the client.java file on each command prompt. Once complete, you can communicate freely.
+
+
+You can use the following command in the Command Prompt to find the process ID (PID) associated with the process listening on port 9999:
+netstat -ano | findstr :9999
+
+To kill the process, you can use the following command in the Command Prompt:
+taskkill /PID <PID> /F
