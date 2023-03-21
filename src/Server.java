@@ -4,34 +4,20 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Server {
+public class Server implements Runnable {
 
 	private ArrayList<SocketHandler> connections;
 	private ServerSocket server;
 	private boolean active;
+	private ExecutorService pool;
 
 	public Server() {
 		this.connections = new ArrayList<>();
-		active = false;
+		active = true;
 
-	}
-
-	public void shutDown() {
-		try {
-
-			active = true;
-			
-			for(SocketHandler sh:connections) {
-				sh.shutDown();
-			}
-			
-			if (server.isClosed() == false) {
-				server.close();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void broadcast(String msg) {
@@ -43,18 +29,38 @@ public class Server {
 	public void run() {
 		try {
 			server = new ServerSocket(9999);
+			pool = Executors.newCachedThreadPool();
 
-			while (!active) {
+			while (active) {
 				Socket client = server.accept();
 				SocketHandler handler = new SocketHandler(client);
 				connections.add(handler);
+
+				pool.execute(handler);
 			}
 		} catch (Exception e) {
-
+			this.shutDown();
 		}
 	}
 
-	public class SocketHandler {
+	public void shutDown() {
+		try {
+
+			active = false;
+
+			for (SocketHandler sh : connections) {
+				sh.shutDown();
+			}
+
+			if (server.isClosed() == false) {
+				server.close();
+			}
+		} catch (Exception e) {
+			//ignoring
+		}
+	}
+
+	public class SocketHandler implements Runnable {
 
 		private Socket client;
 		private BufferedReader in;
@@ -79,30 +85,38 @@ public class Server {
 				while ((message = in.readLine()) != null) {
 					if (message.startsWith("/quit")) {
 
+						broadcast(username + " left the chat..");
+						this.shutDown();
 					} else {
 						broadcast(username + ": " + message);
 					}
 				}
 
 			} catch (Exception e) {
-
+				shutDown();
 			}
 		}
 
 		public void shutDown() {
 			try {
-			out.close();
-			in.close();
-			if(!client.isClosed()) {
-				client.close();
-			}
-		} catch (Exception e) {
-				
+				out.close();
+				in.close();
+				if (!client.isClosed()) {
+					client.close();
+				}
+			} catch (Exception e) {
+
 			}
 		}
-		
+
 		public void writeMessage(String msg) {
 			out.println(msg);
 		}
+
+	}
+
+	public static void main(String[] args) {
+		Server server = new Server();
+		server.run();
 	}
 }
